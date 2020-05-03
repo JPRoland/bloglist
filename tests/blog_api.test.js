@@ -102,6 +102,36 @@ describe('addition of a new blog', () => {
   })
 })
 
+describe('deleting a blog', () => {
+  test('provided an id, responds with 204 and deletes the blog', async () => {
+    const blogsBefore = await Blog.find({})
+    const blogToDelete = blogsBefore[0]
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+
+    const blogsAfter = await Blog.find({})
+    expect(blogsAfter.length).toBe(initialBlogs.length - 1)
+
+    const titles = blogsAfter.map((blog) => blog.title)
+    expect(titles).not.toContain(blogToDelete.title)
+  })
+})
+
+describe('updating a blog', () => {
+  test('updates the correct blog', async () => {
+    const blogsBefore = await Blog.find({})
+    const blogToUpdate = blogsBefore[0]
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send({ likes: 42 })
+      .expect(200)
+
+    const updatedBlog = await Blog.findById(blogToUpdate.id)
+    expect(updatedBlog.likes).toBe(42)
+  })
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
