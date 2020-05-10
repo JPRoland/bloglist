@@ -23,7 +23,7 @@ const initialBlogs = [
 ]
 
 const blogsInDB = async () => {
-  const blogs = await Blog.find({})
+  const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
   return blogs.map((blog) => blog.toJSON())
 }
 
@@ -40,9 +40,16 @@ const validNonExistingId = async () => {
   return blog._id.toString()
 }
 
+const login = async (api, user) => {
+  let response = await api.post('/api/login/').send(user)
+
+  return response.body.token
+}
+
 module.exports = {
   initialBlogs,
   blogsInDB,
   usersInDB,
   validNonExistingId,
+  login,
 }

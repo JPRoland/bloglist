@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const bcrypt = require('bcrypt')
 const app = require('../app')
 const Blog = require('../models/blog')
 const User = require('../models/user')
@@ -7,6 +8,7 @@ const User = require('../models/user')
 const {
   initialBlogs,
   blogsInDB,
+  login,
   usersInDB,
   validNonExistingId,
 } = require('./test_helper')
@@ -16,8 +18,20 @@ const api = supertest(app)
 describe('With initial blogs saved', () => {
   beforeEach(async () => {
     await Blog.deleteMany({})
+    await User.deleteMany({})
+    const password = await bcrypt.hash('password', 10)
 
-    const blogObjects = initialBlogs.map((blog) => new Blog(blog))
+    const user = new User({
+      username: 'root',
+      name: 'Admin',
+      passwordHash: password,
+    })
+
+    await user.save()
+
+    const blogObjects = initialBlogs.map(
+      (blog) => new Blog(Object.assign(blog, { user: user._id.toString() }))
+    )
     const promiseArray = blogObjects.map((blog) => blog.save())
     await Promise.all(promiseArray)
   })
@@ -51,6 +65,9 @@ describe('With initial blogs saved', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
+      console.log(response.body)
+      console.log(blogToFind)
+
       expect(response.body).toEqual(blogToFind)
     })
 
@@ -74,8 +91,11 @@ describe('With initial blogs saved', () => {
         likes: 0,
       }
 
+      const token = await login(api, { username: 'root', password: 'password' })
+
       await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${token}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -94,8 +114,11 @@ describe('With initial blogs saved', () => {
         url: 'https://new.test',
       }
 
+      const token = await login(api, { username: 'root', password: 'password' })
+
       await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${token}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -110,7 +133,13 @@ describe('With initial blogs saved', () => {
         url: 'https://new.test',
       }
 
-      await api.post('/api/blogs').send(newBlog).expect(400)
+      const token = await login(api, { username: 'root', password: 'password' })
+
+      await api
+        .post('/api/blogs')
+        .set('Authorization', `bearer ${token}`)
+        .send(newBlog)
+        .expect(400)
     })
   })
 
@@ -119,7 +148,12 @@ describe('With initial blogs saved', () => {
       const blogsBefore = await blogsInDB()
       const blogToDelete = blogsBefore[0]
 
-      await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+      const token = await login(api, { username: 'root', password: 'password' })
+
+      await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .set('Authorization', `bearer ${token}`)
+        .expect(204)
 
       const blogsAfter = await blogsInDB()
       expect(blogsAfter.length).toBe(initialBlogs.length - 1)
