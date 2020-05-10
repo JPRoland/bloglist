@@ -3,7 +3,12 @@ const logger = require('./logger')
 const requestLogger = (req, res, next) => {
   logger.info('Method:', req.method)
   logger.info('Path:', req.path)
-  logger.info('Body:', req.body)
+  if (req.body.password) {
+    logger.info('Login request')
+  } else {
+    logger.info('Body:', req.body)
+  }
+
   logger.info('---')
   next()
 }

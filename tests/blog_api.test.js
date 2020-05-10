@@ -168,8 +168,11 @@ describe('With initial blogs saved', () => {
       const blogsBefore = await blogsInDB()
       const blogToUpdate = blogsBefore[0]
 
+      const token = await login(api, { username: 'root', password: 'password' })
+
       await api
         .put(`/api/blogs/${blogToUpdate.id}`)
+        .set('Authorization', `bearer ${token}`)
         .send({ likes: 42 })
         .expect(200)
 
