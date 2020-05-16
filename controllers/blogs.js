@@ -78,11 +78,11 @@ blogsRouter.put('/:id', async (req, res) => {
     return res.status(401).json({ error: 'token missing or invalid' })
   }
 
-  const blog = await Blog.findById(req.params.id)
+  // const blog = await Blog.findById(req.params.id)
 
-  if (blog.user.toString() !== decodedToken.id) {
-    return res.status(401).json({ error: 'You must be logged in to do that' })
-  }
+  // if (blog.user.toString() !== decodedToken.id) {
+  //   return res.status(401).json({ error: 'You must be logged in to do that' })
+  // }
 
   const updatedBlog = await Blog.findByIdAndUpdate(
     req.params.id,
